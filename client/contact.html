@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact</title>
+
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .addresses-container, .file-upload-container, .send-mail-container {
+            margin-bottom: 20px;
+        }
+
+        #file-upload {
+            margin-bottom: 20px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 10px 15px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1 id="case-ID"></h1>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="name-input" placeholder="Name (Auto Fill)" />
+        <input type="text" id="location-input" placeholder="City, State (Auto Fill)" />
+        <button id="search-btn">Search</button>
+    </div>
+
+    <div class="addresses-container" id="addresses-container" style="display: none;">
+        <!-- Address checkboxes will be appended here by JavaScript -->
+    </div>
+
+    <div class="file-upload-container" id="file-upload-container" style="display: none;">
+        <input type="file" id="file-upload" />
+    </div>
+
+    <div class="send-mail-container" id="send-mail-container" style="display: none;">
+        <button id="send-mail-btn">Send Mail</button>
+    </div>
+
+    <script>
+        const caseID = window.location.pathname.split('/').pop();
+
+        window.onload = () => {
+            const caseID = window.location.pathname.split('/').pop();
+            fetch(`/${caseID}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('case-ID').textContent = caseID;
+
+                    document.getElementById('name-input').value = data.name || '';
+                    document.getElementById('location-input').value = data.location || '';
+                })
+                .catch(error => console.error('Error:', error));
+        };
+
+        document.getElementById('search-btn').addEventListener('click', function() {
+            // Display the addresses container
+            document.getElementById('addresses-container').style.display = 'block';
+            
+            // Simulate fetching addresses based on the name and location inputs
+            // This is where you would integrate with your backend to fetch addresses
+            let addresses = ['Address 1', 'Address 2', 'Address 3', 'Address 4']; // Placeholder addresses
+            let addressesContainer = document.getElementById('addresses-container');
+            addressesContainer.innerHTML = ''; // Clear previous addresses
+            
+            addresses.forEach((address, index) => {
+                let label = document.createElement('label');
+                let checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'address-' + index;
+                checkbox.name = 'addresses';
+                checkbox.value = address;
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(address));
+                addressesContainer.appendChild(label);
+                addressesContainer.appendChild(document.createElement('br'));
+            });
+
+            // Display the file upload and send mail button
+            document.getElementById('file-upload-container').style.display = 'block';
+            document.getElementById('send-mail-container').style.display = 'block';
+        });
+
+    </script>
+</body>
+</html>

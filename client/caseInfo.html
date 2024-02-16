@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Details</title>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 50%; /* Adjust width as needed */
+            border: 1px solid #ccc;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            text-align: center;
+        }
+
+        header h1, header h3 {
+            margin: 0;
+            padding: 0;
+        }
+
+        header h3 {
+            margin-top: 10px;
+        }
+
+        header h3 a {
+            color: #0000EE; /* Default link color */
+            text-decoration: none;
+        }
+
+        header h3 a:hover {
+            text-decoration: underline;
+        }
+
+        .case-info p {
+            font-weight: bold;
+            text-align: left;
+            line-height: 1.6;
+            margin-left: 20px; /* Adjust as needed */
+        }
+
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #contact-btn {
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #contact-btn:hover {
+            background-color: #333; /* Darker background on hover */
+        }
+
+        /* Add responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                width: 80%; /* Adjust width for smaller screens */
+            }
+        }
+
+        /* Further adjust width for very small screens */
+        @media (max-width: 480px) {
+            .container {
+                width: 95%; /* Adjust width for very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="case-ID"></h1>
+            <h3><a id="agency-PDF"></a></h3>
+        </header>
+
+        <br>
+
+        <section class="case-info">
+            <p id="case-name">Name: </p>
+            <p id="case-location">Location: </p>
+            <p id="case-date">Date: </p>
+            <p id="case-items">Item(s): </p>
+            <p id="case-value">Value: </p>
+        </section>
+
+        <footer>
+            <button id="contact-btn" onclick="contactClick()">Contact</button>
+        </footer>
+    </div>
+
+    <script>
+        const caseID = window.location.pathname.split('/').pop();
+        const agency = caseID.split('-')[1];
+
+        function contactClick() {
+            window.location.href = `/contact/${caseID}`;
+        }
+
+        window.onload = () => {
+            fetch(`/${caseID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        document.getElementById('case-ID').textContent = 'CASE NOT FOUND';
+                        throw new Error('Case not found');
+                    }
+
+                    return response.json()
+                })
+                .then(caseDetails => {
+                    document.getElementById('case-ID').textContent = caseID;
+
+                    document.getElementById('agency-PDF').href = `https://www.forfeiture.gov/pdf/${agency}/OfficialNotification.pdf`
+                    document.getElementById('agency-PDF').textContent = `https://www.forfeiture.gov/pdf/${agency}/OfficialNotification.pdf`
+
+                    document.getElementById('case-name').textContent += caseDetails.name;
+                    document.getElementById('case-location').textContent += caseDetails.location;
+                    document.getElementById('case-date').textContent += caseDetails.date;
+                    document.getElementById('case-items').textContent += caseDetails.items;
+                    document.getElementById('case-value').textContent += caseDetails.value;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>   
+</body>
+</html>

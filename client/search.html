@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Search</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            height: 100vh;
+            width: 160px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #333;
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+        .navbar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+        }
+        .navbar a:hover {
+            background-color: #555;
+            color: white;
+        }
+        .main {
+            margin-left: 160px; /* Same as the width of the sidebar */
+            padding: 20px;
+        }
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .search-container input[type=text] {
+            padding: 10px;
+            margin-right: 10px;
+            width: 20%; /* Adjust width as needed */
+        }
+        .search-container button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .results-table th, .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results-table th {
+            background-color: #f2f2f2;
+        }
+        .results-table tbody tr:hover {
+            background-color: #e2e2e2; /* or any color of your choice */
+            cursor: pointer;
+        }
+
+        /* The Modal (background) */
+        .modal {
+            text-align: center;
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        #contact-btn {
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #contact-btn:hover {
+            background-color: #333; /* Darker background on hover */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/">Home</a>
+        <a href="/search">Search</a>
+        <a href="/records">Records</a>
+        <a href="/support">Support</a>
+    </div>
+
+    <div class="main">
+        <h1>Case Search</h1>
+        <div class="search-container" id="search-container">
+            <select id="search-agency">
+                <option value="">Select Agency</option>
+                <option value="ATF">ATF</option>
+                <option value="DEA">DEA</option>
+                <!-- <option value="FBI">FBI</option> -->
+                <!-- <option value="IRS">IRS</option> -->
+            </select>
+            <input type="text" id="search-caseID" placeholder="CaseID">
+            <input type="text" id="search-name" placeholder="Name">
+            <input type="text" id="search-location" placeholder="City, State">
+            <button id="search-button" onclick="performSearch()">Search</button>
+        </div>
+        <table class="results-table" id="searchResults">
+            <thead>
+                <tr>
+                    <th>CaseID</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Date</th>
+                    <th>Item(s)</th>
+                    <th>Dollar Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Search results will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-case-id"></h2>
+            <p><a id="modal-agency-pdf" target="_blank"></a></p>
+
+            <p id="modal-case-description"></p>
+
+            <p id="modal-case-name"></p>
+            <p id="modal-case-location"></p>
+            <p id="modal-case-date"></p>
+            <p id="modal-case-items"></p>
+            <p id="modal-case-value"></p>
+            <button id="contact-btn" onclick="contactClick()">Contact</button>
+        </div>
+    </div>
+
+    <script>
+        var searchContainer = document.getElementById("search-container");
+        searchContainer.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("search-button").click();
+            }
+        })
+
+        function performSearch() {
+            var agency = document.getElementById('search-agency').value;
+            var caseID = document.getElementById('search-caseID').value;
+            var name = document.getElementById('search-name').value;
+            var location = document.getElementById('search-location').value;
+
+            if (!agency) {
+                alert('Please select an agency.');
+                return;
+            }
+
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ agency, caseID, name, location })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateResultsTable(data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function updateResultsTable(results) {
+            var resultsTable = document.getElementById('searchResults').getElementsByTagName('tbody')[0];
+            resultsTable.innerHTML = '';
+
+            if (results.length === 0) {
+                var row = resultsTable.insertRow();
+                var cell = row.insertCell();
+                cell.textContent = "No results found";
+                cell.colSpan = 6; // Assuming there are 6 columns in your table
+            } else {
+                results.forEach(result => {
+                    var row = resultsTable.insertRow();
+
+                    row.style.cursor = 'pointer';
+                
+                    row.onclick = async function() {
+                        const caseID = result.caseID;
+                        getCaseDetails(caseID);
+                        // window.location.href = `/case/${caseID}`;
+                    };
+                    
+                    Object.values(result).forEach(text => {
+                        var cell = row.insertCell();
+                        cell.textContent = text;
+                    });
+                });
+            }
+        }
+
+        function showCaseModal() {
+            // Show the modal
+            var modal = document.getElementById('myModal');
+            modal.style.display = "block";
+
+            // Get the <span> element that closes the modal
+            var span = document.getElementsByClassName("close")[0];
+
+            // When the user clicks on <span> (x), close the modal
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            // Also close the modal if the user clicks anywhere outside of the modal content
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        }
+
+        async function getCaseDetails(caseID) {
+            await fetch(`/${caseID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        document.getElementById('case-ID').textContent = 'CASE NOT FOUND';
+                        throw new Error('Case not found');
+                    }
+
+                    return response.json()
+                })
+                .then(caseDetails => {
+                    const agency = caseID.split('-')[1];
+
+                    document.getElementById('modal-case-id').textContent = caseID;
+                    document.getElementById('modal-agency-pdf').textContent = `https://www.forfeiture.gov/pdf/${agency}/OfficialNotification.pdf`;
+                    document.getElementById('modal-agency-pdf').href = `https://www.forfeiture.gov/pdf/${agency}/OfficialNotification.pdf`;
+
+                    document.getElementById('modal-case-description').textContent = caseDetails.description;
+
+                    document.getElementById('modal-case-name').textContent = caseDetails.name;
+                    document.getElementById('modal-case-location').textContent = caseDetails.location;
+                    document.getElementById('modal-case-date').textContent = caseDetails.date;
+                    document.getElementById('modal-case-items').textContent = caseDetails.items;
+                    document.getElementById('modal-case-value').textContent = caseDetails.value;
+
+                    showCaseModal()
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function contactClick() {
+            const caseID = document.getElementById('modal-case-id').textContent;
+            window.location.href = `/contact/${caseID}`;
+        }
+    </script>
+</body>
+</html>
